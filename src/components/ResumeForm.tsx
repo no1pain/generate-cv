@@ -103,10 +103,10 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               })}
               className="mt-1 block w-full rounded-md border border-gray-600 p-2 shadow-sm bg-gray-800 text-gray-200 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
             />
-            {/* @ts-ignore */}
+            {/* @ts-expect-error - Property access in errors object */}
             {errors.personalInfo?.fullName && (
               <p className="mt-1 text-sm text-red-600">
-                {/* @ts-ignore */}
+                {/* @ts-expect-error - Property access in errors object */}
                 {errors.personalInfo.fullName.message?.toString()}
               </p>
             )}
@@ -126,10 +126,10 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               })}
               className="mt-1 block w-full rounded-md border border-gray-600 p-2 shadow-sm bg-gray-800 text-gray-200 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
             />
-            {/* @ts-ignore */}
+            {/* @ts-expect-error - Property access in errors object */}
             {errors.personalInfo?.email && (
               <p className="mt-1 text-sm text-red-600">
-                {/* @ts-ignore */}
+                {/* @ts-expect-error - Property access in errors object */}
                 {errors.personalInfo.email.message?.toString()}
               </p>
             )}
@@ -261,7 +261,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                 <label className="block text-sm font-medium text-gray-300">
                   Description
                 </label>
-                {/* @ts-ignore */}
+                {/* @ts-expect-error - Textarea incompatible with register return type */}
                 <textarea
                   {...register(`education.${index}.description` as const)}
                   rows={3}
@@ -357,7 +357,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                 <label className="block text-sm font-medium text-gray-300">
                   Job Description
                 </label>
-                {/* @ts-ignore */}
+                {/* @ts-expect-error - Textarea incompatible with register return type */}
                 <textarea
                   {...register(`experience.${index}.description` as const, {
                     required: "This field is required",
@@ -384,7 +384,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
           />
           {errors.skills && (
             <p className="mt-1 text-sm text-red-600">
-              {/* @ts-ignore */}
+              {/* @ts-expect-error - Property access in errors object */}
               {errors.skills.message?.toString()}
             </p>
           )}
@@ -423,7 +423,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
               <label className="block text-sm font-medium text-gray-300">
                 Proficiency
               </label>
-              {/* @ts-ignore */}
+              {/* @ts-expect-error - Select incompatible with register return type */}
               <select
                 {...register(`languages.${index}.proficiency` as const)}
                 className="mt-1 block w-full rounded-md border border-gray-600 p-2 shadow-sm bg-gray-800 text-gray-200 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
@@ -465,7 +465,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
           />
           {errors.targetPosition && (
             <p className="mt-1 text-sm text-red-600">
-              {/* @ts-ignore */}
+              {/* @ts-expect-error - Property access in errors object */}
               {errors.targetPosition.message?.toString()}
             </p>
           )}
@@ -474,7 +474,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
           <label className="block text-sm font-medium text-gray-300">
             Additional Information
           </label>
-          {/* @ts-ignore */}
+          {/* @ts-expect-error - Textarea incompatible with register return type */}
           <textarea
             {...register("additionalInfo")}
             rows={4}
