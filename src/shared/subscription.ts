@@ -20,7 +20,7 @@ export async function checkUserSubscription(userId: string): Promise<boolean> {
       .select("*")
       .eq("user_id", userId)
       .eq("status", "active")
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error checking subscription:", error);
@@ -133,7 +133,7 @@ export async function getUserSubscription(
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error getting subscription:", error);

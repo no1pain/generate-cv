@@ -44,7 +44,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
           description: "",
         },
       ],
-      skills: "",
+      skills: [],
       languages: [{ language: "", proficiency: "Intermediate" }],
       targetPosition: "",
       additionalInfo: "",
@@ -381,6 +381,18 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
             {...register("skills", { required: "Skills are required" })}
             placeholder="e.g. JavaScript, React, Python, Machine Learning, Project Management"
             className="mt-1 block w-full rounded-md border border-gray-600 p-2 shadow-sm bg-gray-800 text-gray-200 focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50"
+            onChange={(e) => {
+              // Convert comma-separated string to array
+              const skillsArray = e.target.value
+                .split(",")
+                .map((skill) => skill.trim())
+                .filter((skill) => skill !== "");
+
+              const field = register("skills");
+              (field.onChange as any)({
+                target: { name: "skills", value: skillsArray },
+              });
+            }}
           />
           {errors.skills && (
             <p className="mt-1 text-sm text-red-600">

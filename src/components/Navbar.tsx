@@ -53,14 +53,25 @@ export default function Navbar() {
             </Link>
 
             {user && (
-              <Link
-                href="/dashboard"
-                className={`px-3 py-2 rounded-md text-sm font-medium ${isActive(
-                  "/dashboard"
-                )}`}
-              >
-                Dashboard
-              </Link>
+              <>
+                <Link
+                  href="/dashboard"
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${isActive(
+                    "/dashboard"
+                  )}`}
+                >
+                  Dashboard
+                </Link>
+
+                <Link
+                  href="/my-resumes"
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${isActive(
+                    "/my-resumes"
+                  )}`}
+                >
+                  My Resumes
+                </Link>
+              </>
             )}
 
             <Link

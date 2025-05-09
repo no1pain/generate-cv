@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { ResumeFormData } from "@/types";
 import { generateResume } from "@/shared/openai";
+import { createClient } from "@/lib/supabase/server";
 
+// Local fallback implementation if OpenAI fails
 async function generateResumeWithAI(data: ResumeFormData): Promise<string> {
   await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -15,15 +17,16 @@ async function generateResumeWithAI(data: ResumeFormData): Promise<string> {
     additionalInfo,
   } = data;
 
-  const skillsString = skills.join(", ");
+  // Handle both string and array types for backward compatibility
+  const skillsString = Array.isArray(skills) ? skills.join(", ") : skills;
 
   const languagesString = languages
     .map((l) => `${l.language} (${l.proficiency})`)
     .join(", ");
 
-  return `${personalInfo.fullName.toUpperCase()}
+  return `${personalInfo.fullName?.toUpperCase() || ""}
 ${targetPosition}
-${personalInfo.location}${
+${personalInfo.location || ""}${
     personalInfo.phone ? ` | ${personalInfo.phone}` : ""
   }${personalInfo.email ? ` | ${personalInfo.email}` : ""}${
     personalInfo.linkedin ? ` | ${personalInfo.linkedin}` : ""
@@ -72,6 +75,20 @@ ${languagesString}`
 
 export async function POST(request: Request) {
   try {
+    // Get current user from the request cookies
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
+    }
+
+    const userId = user.id;
     const data: ResumeFormData = await request.json();
 
     // Validate required fields
@@ -82,19 +99,13 @@ export async function POST(request: Request) {
       );
     }
 
+    let resumeText;
+    let usedOpenAI = false;
+
     try {
       // Try to use OpenAI integration first
-      const resumeText = await generateResume(data);
-
-      // Return the generated resume with OpenAI metadata
-      return NextResponse.json(
-        {
-          text: resumeText,
-          usingOpenAI: true,
-          model: "GPT-4o",
-        },
-        { status: 200 }
-      );
+      resumeText = await generateResume(data);
+      usedOpenAI = true;
     } catch (error) {
       console.error(
         "Error with OpenAI integration, falling back to default:",
@@ -102,15 +113,38 @@ export async function POST(request: Request) {
       );
 
       // Fallback to the local implementation if OpenAI fails
-      const resumeText = await generateResumeWithAI(data);
-      return NextResponse.json(
-        {
-          text: resumeText,
-          usingOpenAI: false,
-        },
-        { status: 200 }
-      );
+      resumeText = await generateResumeWithAI(data);
     }
+
+    // Save the generated resume to the database
+    const { data: savedResume, error: saveError } = await supabase
+      .from("resumes")
+      .insert({
+        user_id: userId,
+        title: `Resume for ${data.targetPosition}`,
+        content: resumeText,
+        target_position: data.targetPosition,
+        template: data.template || "standard",
+      })
+      .select()
+      .single();
+
+    if (saveError) {
+      console.error("Error saving resume:", saveError);
+      // Continue despite error - we'll return the text but warn that saving failed
+    }
+
+    // Return the generated resume with metadata
+    return NextResponse.json(
+      {
+        text: resumeText,
+        usingOpenAI: usedOpenAI,
+        model: usedOpenAI ? "GPT-4o" : "local",
+        saved: !saveError,
+        resumeId: savedResume?.id,
+      },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Error generating resume:", error);
     return NextResponse.json(

@@ -31,6 +31,7 @@ export interface ResumeFormData {
   }[];
   targetPosition: string;
   additionalInfo: string;
+  template?: string;
 }
 
 export interface GeneratedResume {
