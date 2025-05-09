@@ -39,29 +39,57 @@ export async function GET(request: Request) {
     try {
       const supabase = createClient();
 
-      // Check if the user exists
-      const { data } = await supabase.auth.admin.listUsers();
-      const user = data.users.find(
-        (u: User) => u.email?.toLowerCase() === email.toLowerCase()
+      // Try to get all users from auth table
+      const { data: listData, error: listError } =
+        await supabase.auth.admin.listUsers();
+
+      if (listError) {
+        return NextResponse.json({
+          message: "Webhook check endpoint",
+          envVariables: envCheck,
+          webhookUrl: `${process.env.GUMROAD_WEBHOOK_URL || "Not set"}`,
+          currentTime: new Date().toISOString(),
+          testResult: {
+            success: false,
+            error: "Error fetching users: " + listError.message,
+          },
+        });
+      }
+
+      // Search for the user in the list (case insensitive)
+      const emailLowercase = email.toLowerCase().trim();
+      const foundUsers = listData?.users.filter(
+        (u: User) => u.email?.toLowerCase().trim() === emailLowercase
       );
+
+      // Check for matching users with similar emails to help with troubleshooting
+      const similarUsers = listData?.users.filter((u: User) =>
+        u.email?.toLowerCase().includes(emailLowercase.split("@")[0])
+      );
+
+      // Determine if we found a user
+      const user = foundUsers && foundUsers.length > 0 ? foundUsers[0] : null;
 
       if (!user) {
         return NextResponse.json({
           message: "Webhook check endpoint",
           envVariables: envCheck,
-          webhookUrl: `${
-            process.env.GUMROAD_WEBHOOK_URL ||
-            "Not set - should be your domain + /api/gumroad-webhook"
-          }`,
+          webhookUrl: `${process.env.GUMROAD_WEBHOOK_URL || "Not set"}`,
           currentTime: new Date().toISOString(),
           testResult: {
             success: false,
             message: "User not found with email: " + email,
+            listLookupError: listError,
+            totalUsersFound: listData?.users.length || 0,
+            similarEmailsFound: similarUsers?.map((u) => u.email) || [],
+            allUsers: listData?.users.map((u) => u.email) || [],
+            troubleshooting:
+              "Make sure the email matches exactly what's in your Supabase auth table",
           },
         });
       }
 
-      // Check if user has an active subscription
+      // If we found a user, check for subscription
       const { data: subscription } = await supabase
         .from("subscriptions")
         .select("*")
@@ -72,31 +100,28 @@ export async function GET(request: Request) {
       return NextResponse.json({
         message: "Webhook check endpoint",
         envVariables: envCheck,
-        webhookUrl: `${
-          process.env.GUMROAD_WEBHOOK_URL ||
-          "Not set - should be your domain + /api/gumroad-webhook"
-        }`,
+        webhookUrl: `${process.env.GUMROAD_WEBHOOK_URL || "Not set"}`,
         currentTime: new Date().toISOString(),
         testResult: {
           success: true,
-          userFound: !!user,
-          userId: user?.id,
+          userFound: true,
+          userId: user.id,
+          userEmail: user.email,
           hasSubscription: !!subscription,
           subscriptionDetails: subscription || "No active subscription",
         },
       });
     } catch (error) {
+      console.error("Error in webhook check:", error);
       return NextResponse.json({
         message: "Webhook check endpoint",
         envVariables: envCheck,
-        webhookUrl: `${
-          process.env.GUMROAD_WEBHOOK_URL ||
-          "Not set - should be your domain + /api/gumroad-webhook"
-        }`,
+        webhookUrl: `${process.env.GUMROAD_WEBHOOK_URL || "Not set"}`,
         currentTime: new Date().toISOString(),
         testResult: {
           success: false,
           error: "Error checking subscription: " + error,
+          detail: error instanceof Error ? error.stack : "Unknown error type",
         },
       });
     }

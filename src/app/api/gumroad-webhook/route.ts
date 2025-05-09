@@ -27,34 +27,84 @@ async function ensureUserExists(
       return { userId: null, error: lookupError };
     }
 
-    // Find by email (case insensitive)
-    const existingUser = existingUsers.users.find(
-      (u: User) => u.email?.toLowerCase() === email.toLowerCase()
-    );
+    // Find the user by email in auth system
+    let user = null;
 
-    if (existingUser) {
-      console.log("User already exists:", existingUser.id);
-      return { userId: existingUser.id, error: null };
+    if (email) {
+      // Clean up emails for comparison
+      const emailLower = email.toLowerCase().trim();
+
+      // First try exact match
+      user = existingUsers.users.find(
+        (u: User) => u.email?.toLowerCase().trim() === emailLower
+      );
+
+      // If no exact match and the email is a Gumroad noreply address, try to find similar email
+      if (!user && emailLower.includes("@customers.gumroad.com")) {
+        // Extract username part from noreply@customers.gumroad.com format
+        const username = emailLower.split("@")[0];
+        console.log("Looking for similar emails matching:", username);
+
+        // Look for any users with similar email parts
+        const possibleUsers = existingUsers.users.filter((u) => {
+          if (!u.email) return false;
+          return (
+            u.email.toLowerCase().includes(username) ||
+            username.includes(u.email.toLowerCase().split("@")[0])
+          );
+        });
+
+        if (possibleUsers.length === 1) {
+          // If we only found one similar email, use that
+          user = possibleUsers[0];
+          console.log("Found user by partial email match:", user.email);
+        } else if (possibleUsers.length > 1) {
+          // If we found multiple, log them but don't automatically select
+          console.log(
+            "Multiple possible matching users:",
+            possibleUsers.map((u) => u.email)
+          );
+        }
+      }
+
+      // If user is null at this point, we couldn't find a match
+      if (!user) {
+        // Let's log all the users for debugging
+        console.log("User not found for email:", email);
+        console.log(
+          "Available users:",
+          existingUsers.users.map((u) => u.email)
+        );
+
+        // If no user exists, create one
+        console.log("Creating new user account for:", email);
+
+        // Generate a temporary random password
+        const tempPassword = crypto.randomBytes(16).toString("hex");
+
+        const { data: newUser, error } = await supabase.auth.admin.createUser({
+          email: email,
+          password: tempPassword,
+          email_confirm: true, // Auto-confirm the email
+        });
+
+        if (error) {
+          console.error("Failed to create user:", error);
+          return { userId: null, error };
+        }
+
+        return { userId: newUser.user.id, error: null };
+      }
     }
 
-    // If no user exists, create one
-    console.log("Creating new user account for:", email);
-
-    // Generate a temporary random password
-    const tempPassword = crypto.randomBytes(16).toString("hex");
-
-    const { data: newUser, error } = await supabase.auth.admin.createUser({
-      email: email,
-      password: tempPassword,
-      email_confirm: true, // Auto-confirm the email
-    });
-
-    if (error) {
-      console.error("Failed to create user:", error);
-      return { userId: null, error };
+    if (!user) {
+      console.error("User not found for email:", email);
+      return { userId: null, error: "User not found" };
     }
 
-    return { userId: newUser.user.id, error: null };
+    const userId = user.id;
+
+    return { userId, error: null };
   } catch (error) {
     console.error("Error ensuring user exists:", error);
     return { userId: null, error };
