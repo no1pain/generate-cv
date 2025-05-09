@@ -241,18 +241,38 @@ export async function POST(request: Request) {
         });
       }
 
-      // Create the subscription in our database
-      const success = await createSubscription(
-        userId,
-        planType,
-        planPeriod,
-        subscriptionID || saleID || "one-time-purchase"
-      );
+      // Calculate subscription period dates
+      const currentDate = new Date();
+      const currentPeriodStart = currentDate.toISOString();
 
-      if (!success) {
-        console.error("Failed to create subscription record");
+      const currentPeriodEnd = new Date(currentDate);
+      if (planPeriod === "monthly") {
+        currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
+      } else if (planPeriod === "yearly") {
+        currentPeriodEnd.setFullYear(currentPeriodEnd.getFullYear() + 1);
+      }
+
+      // Directly insert the subscription
+      const { data: newSubscription, error: insertError } = await supabase
+        .from("subscriptions")
+        .insert({
+          user_id: userId,
+          status: "active" as SubscriptionStatus,
+          plan_type: planType,
+          plan_period: planPeriod,
+          current_period_start: currentPeriodStart,
+          current_period_end: currentPeriodEnd.toISOString(),
+          gumroad_subscription_id:
+            subscriptionID || saleID || "one-time-purchase",
+          cancel_at_period_end: false,
+        })
+        .select("*")
+        .single();
+
+      if (insertError) {
+        console.error("Failed to create subscription record:", insertError);
         return NextResponse.json(
-          { error: "Failed to create subscription" },
+          { error: "Failed to create subscription", details: insertError },
           { status: 500 }
         );
       }
@@ -261,6 +281,7 @@ export async function POST(request: Request) {
         success: true,
         message: "Successfully created premium access",
         userId,
+        subscription: newSubscription,
       });
     }
 
