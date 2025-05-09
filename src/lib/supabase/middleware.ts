@@ -16,7 +16,7 @@ export async function auth({}: { request: NextRequest | Request }) {
         set(name: string, value: string, options) {
           try {
             cookieStore.set({ name, value, ...options });
-          } catch (_) {
+          } catch {
             // The `set` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
@@ -25,7 +25,7 @@ export async function auth({}: { request: NextRequest | Request }) {
         remove(name: string, options) {
           try {
             cookieStore.set({ name, value: "", ...options });
-          } catch (_) {
+          } catch {
             // The `delete` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
