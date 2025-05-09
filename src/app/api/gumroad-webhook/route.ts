@@ -12,6 +12,55 @@ import {
 import { User } from "@supabase/supabase-js";
 import crypto from "crypto";
 
+// Create a user account if it doesn't exist
+async function ensureUserExists(
+  supabase: any,
+  email: string
+): Promise<{ userId: string | null; error: any }> {
+  try {
+    // First, check if user already exists
+    const { data: existingUsers, error: lookupError } =
+      await supabase.auth.admin.listUsers();
+
+    if (lookupError) {
+      console.error("Error checking existing users:", lookupError);
+      return { userId: null, error: lookupError };
+    }
+
+    // Find by email (case insensitive)
+    const existingUser = existingUsers.users.find(
+      (u: User) => u.email?.toLowerCase() === email.toLowerCase()
+    );
+
+    if (existingUser) {
+      console.log("User already exists:", existingUser.id);
+      return { userId: existingUser.id, error: null };
+    }
+
+    // If no user exists, create one
+    console.log("Creating new user account for:", email);
+
+    // Generate a temporary random password
+    const tempPassword = crypto.randomBytes(16).toString("hex");
+
+    const { data: newUser, error } = await supabase.auth.admin.createUser({
+      email: email,
+      password: tempPassword,
+      email_confirm: true, // Auto-confirm the email
+    });
+
+    if (error) {
+      console.error("Failed to create user:", error);
+      return { userId: null, error };
+    }
+
+    return { userId: newUser.user.id, error: null };
+  } catch (error) {
+    console.error("Error ensuring user exists:", error);
+    return { userId: null, error };
+  }
+}
+
 export async function POST(request: Request) {
   try {
     // Get the request data
@@ -20,16 +69,33 @@ export async function POST(request: Request) {
     // Get only the fields we actually use
     const productPermalink = payload.get("product_permalink")?.toString();
     const subscriptionID = payload.get("subscription_id")?.toString();
-    const purchaserEmail = payload.get("email")?.toString();
+    const saleID = payload.get("sale_id")?.toString();
+    let purchaserEmail = payload.get("email")?.toString();
     const resource = payload.get("resource_name")?.toString();
     const action = payload.get("resource_action")?.toString();
     const signature = request.headers.get("X-Gumroad-Signature");
+
+    // Get the purchaser name for creating an account
+    const purchaserName =
+      payload.get("full_name")?.toString() ||
+      payload.get("purchaser_name")?.toString() ||
+      "Gumroad User";
+
+    // Format Gumroad email properly (remove the noreply@ prefix if it exists)
+    if (purchaserEmail && purchaserEmail.includes("@customers.gumroad.com")) {
+      // Extract the actual email if available in another field
+      const actualEmail = payload.get("purchaser_email")?.toString();
+      if (actualEmail && actualEmail.includes("@")) {
+        purchaserEmail = actualEmail;
+      }
+    }
 
     // Log the webhook event (for debugging)
     console.log("Gumroad webhook received:", {
       resource,
       action,
       subscriptionID,
+      saleID,
       purchaserEmail,
       productPermalink,
       signature,
@@ -59,9 +125,9 @@ export async function POST(request: Request) {
     }
 
     // Skip processing if we're missing critical information
-    if (!subscriptionID || !purchaserEmail) {
+    if (!purchaserEmail || (!subscriptionID && !saleID)) {
       return NextResponse.json(
-        { error: "Missing required data" },
+        { error: "Missing required data (email or sale/subscription ID)" },
         { status: 400 }
       );
     }
@@ -69,48 +135,43 @@ export async function POST(request: Request) {
     // Get the Supabase client
     const supabase = createClient();
 
-    // Find the user by email in auth system
-    const { data: userResponse, error: userError } =
-      await supabase.auth.admin.listUsers();
+    // Ensure user exists in our system
+    const { userId, error: userError } = await ensureUserExists(
+      supabase,
+      purchaserEmail
+    );
 
-    if (userError) {
-      console.error("Error listing users:", userError);
+    if (userError || !userId) {
+      console.error("Error ensuring user exists:", userError);
       return NextResponse.json(
-        { error: "Failed to find user" },
+        { error: "Failed to find or create user" },
         { status: 500 }
       );
     }
 
-    // Find the matching user by email
-    const user = userResponse.users.find(
-      (u: User) => u.email?.toLowerCase() === purchaserEmail.toLowerCase()
-    );
-
-    if (!user) {
-      console.error("User not found for email:", purchaserEmail);
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const userId = user.id;
-
     // Handle the different webhook events
 
-    // New subscription
-    if (resource === "subscription" && action === "created") {
+    // Handle both subscriptions and one-time purchases
+    if (
+      (resource === "subscription" && action === "created") ||
+      (resource === "sale" && action === "created")
+    ) {
       // Determine the plan type based on the product permalink
       const planType: SubscriptionPlanType = "premium";
-      let planPeriod: SubscriptionPlanPeriod = "monthly";
+      let planPeriod: SubscriptionPlanPeriod = "yearly"; // Default to yearly for one-time purchases
 
-      // Use the environment variable product IDs to identify the plan
-      const monthlyProductId =
-        process.env.MONTHLY_SUBSCRIPTION_PRODUCT_ID || "wseban";
-      const yearlyProductId =
-        process.env.YEARLY_SUBSCRIPTION_PRODUCT_ID || "ixoazp";
+      if (resource === "subscription") {
+        // Use the environment variable product IDs to identify the plan
+        const monthlyProductId =
+          process.env.MONTHLY_SUBSCRIPTION_PRODUCT_ID || "wseban";
+        const yearlyProductId =
+          process.env.YEARLY_SUBSCRIPTION_PRODUCT_ID || "ixoazp";
 
-      if (productPermalink?.includes(yearlyProductId)) {
-        planPeriod = "yearly"; // Yearly plan
-      } else if (productPermalink?.includes(monthlyProductId)) {
-        planPeriod = "monthly"; // Monthly plan
+        if (productPermalink?.includes(yearlyProductId)) {
+          planPeriod = "yearly"; // Yearly plan
+        } else if (productPermalink?.includes(monthlyProductId)) {
+          planPeriod = "monthly"; // Monthly plan
+        }
       }
 
       // Check if subscription already exists
@@ -135,7 +196,7 @@ export async function POST(request: Request) {
         userId,
         planType,
         planPeriod,
-        subscriptionID
+        subscriptionID || saleID || "one-time-purchase"
       );
 
       if (!success) {
@@ -146,7 +207,11 @@ export async function POST(request: Request) {
         );
       }
 
-      return NextResponse.json({ success: true });
+      return NextResponse.json({
+        success: true,
+        message: "Successfully created premium access",
+        userId,
+      });
     }
 
     // Subscription cancelled or failed
@@ -163,7 +228,7 @@ export async function POST(request: Request) {
 
       // Update the subscription status
       const success = await updateSubscriptionStatus(
-        subscriptionID,
+        subscriptionID || "",
         status,
         action === "cancelled" // Set cancel_at_period_end for cancellations
       );
