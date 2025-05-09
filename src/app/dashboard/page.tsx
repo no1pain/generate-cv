@@ -5,11 +5,9 @@ import { useState, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import Navbar from "@/components/Navbar";
 import PremiumFeatureButton from "@/components/PremiumFeatureButton";
 import PremiumBadge from "@/components/PremiumBadge";
-import { SubscriptionDetails } from "@/types";
 
 // Mock resume history data
 const mockResumes = [
@@ -47,7 +45,6 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("resumes"); // "resumes" or "account"
   const [showPremiumBanner, setShowPremiumBanner] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -219,8 +216,8 @@ export default function DashboardPage() {
           <>
             <div className="mb-6">
               <p className="text-gray-300">
-                Here are all the resumes you've created. Click on any resume to
-                view, edit, or download it.
+                Here are all the resumes you&apos;ve created. Click on any
+                resume to view, edit, or download it.
               </p>
             </div>
 

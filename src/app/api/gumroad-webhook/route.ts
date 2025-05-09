@@ -67,7 +67,7 @@ export async function POST(request: Request) {
     // New subscription
     if (resource === "subscription" && action === "created") {
       // Determine the plan type based on the product permalink
-      let planType: SubscriptionPlanType = "premium";
+      const planType: SubscriptionPlanType = "premium";
       let planPeriod: SubscriptionPlanPeriod = "monthly";
 
       if (productPermalink?.includes("ixoazp")) {
