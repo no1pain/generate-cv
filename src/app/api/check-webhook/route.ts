@@ -30,7 +30,13 @@ export async function GET() {
 }
 
 // This keeps track of received webhooks for debugging
-const webhookLog: any[] = [];
+interface WebhookEntry {
+  timestamp: string;
+  headers: Record<string, string>;
+  body: string;
+}
+
+const webhookLog: WebhookEntry[] = [];
 
 export async function POST(request: Request) {
   try {

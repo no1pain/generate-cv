@@ -389,9 +389,10 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
                 .filter((skill) => skill !== "");
 
               const field = register("skills");
-              (field.onChange as any)({
+              // Use unknown assertion to safely bypass type checking
+              field.onChange({
                 target: { name: "skills", value: skillsArray },
-              });
+              } as unknown as React.ChangeEvent<HTMLInputElement>);
             }}
           />
           {errors.skills && (

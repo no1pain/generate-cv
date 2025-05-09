@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { type NextRequest } from "next/server";
 
-export async function auth({ request }: { request: NextRequest | Request }) {
+export async function auth({}: { request: NextRequest | Request }) {
   const cookieStore = cookies();
 
   const supabase = createServerClient(
@@ -16,7 +16,7 @@ export async function auth({ request }: { request: NextRequest | Request }) {
         set(name: string, value: string, options) {
           try {
             cookieStore.set({ name, value, ...options });
-          } catch (error) {
+          } catch (_) {
             // The `set` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
@@ -25,7 +25,7 @@ export async function auth({ request }: { request: NextRequest | Request }) {
         remove(name: string, options) {
           try {
             cookieStore.set({ name, value: "", ...options });
-          } catch (error) {
+          } catch (_) {
             // The `delete` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
