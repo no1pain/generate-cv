@@ -10,21 +10,14 @@ import {
   SubscriptionStatus,
 } from "@/types";
 
-// Webhook secret for verification
-const WEBHOOK_SECRET = process.env.GUMROAD_WEBHOOK_SECRET || "";
-
 export async function POST(request: Request) {
   // Get the request data
   const payload = await request.formData();
 
-  const sellerID = payload.get("seller_id")?.toString();
-  const productID = payload.get("product_id")?.toString();
+  // Get only the fields we actually use
   const productPermalink = payload.get("product_permalink")?.toString();
   const subscriptionID = payload.get("subscription_id")?.toString();
-  const purchaserID = payload.get("purchaser_id")?.toString();
   const purchaserEmail = payload.get("email")?.toString();
-  const saleID = payload.get("sale_id")?.toString();
-  const saleTimestamp = payload.get("sale_timestamp")?.toString();
   const resource = payload.get("resource_name")?.toString();
   const action = payload.get("resource_action")?.toString();
 

@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   ReactNode,
+  useCallback,
 } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
@@ -39,21 +40,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useState<SubscriptionDetails | null>(null);
   const supabase = createClient();
 
-  // Check premium status whenever user changes
-  useEffect(() => {
-    const checkPremiumStatus = async () => {
-      if (user) {
-        await refreshPremiumStatus();
-      } else {
-        setIsPremium(false);
-        setSubscriptionDetails(null);
-      }
-    };
-
-    checkPremiumStatus();
-  }, [user]);
-
-  const refreshPremiumStatus = async () => {
+  // Define refreshPremiumStatus with useCallback to avoid dependency cycle
+  const refreshPremiumStatus = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -73,7 +61,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsPremium(false);
       setSubscriptionDetails(null);
     }
-  };
+  }, [user]);
+
+  // Check premium status whenever user changes
+  useEffect(() => {
+    const checkPremiumStatus = async () => {
+      if (user) {
+        await refreshPremiumStatus();
+      } else {
+        setIsPremium(false);
+        setSubscriptionDetails(null);
+      }
+    };
+
+    checkPremiumStatus();
+  }, [user, refreshPremiumStatus]);
 
   useEffect(() => {
     const setData = async () => {
@@ -105,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [supabase.auth]);
 
   const signIn = async (email: string, password: string) => {
     try {

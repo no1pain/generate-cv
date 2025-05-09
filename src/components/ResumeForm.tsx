@@ -1,16 +1,21 @@
 import { useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
-import {
-  ResumeFormData,
-  TemplateType,
-  EducationItem,
-  ExperienceItem,
-  LanguageItem,
-} from "@/types";
+import { ResumeFormData, TemplateType } from "@/types";
 
 type ResumeFormProps = {
   onSubmit: (data: ResumeFormData) => void;
   isLoading: boolean;
+};
+
+// Define a type for the field prop
+type FieldProps = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onChange: (...event: any[]) => void;
+  onBlur: () => void;
+  value: string[];
+  name: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ref: React.Ref<any>;
 };
 
 export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
@@ -420,7 +425,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
             name="skills"
             control={control}
             rules={{ required: "This field is required" }}
-            render={({ field }: { field: any }) => (
+            render={({ field }: { field: FieldProps }) => (
               <input
                 {...field}
                 onChange={(e) =>

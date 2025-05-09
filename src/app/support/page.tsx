@@ -7,50 +7,50 @@ import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import PremiumShowcase from "@/components/PremiumShowcase";
 import PremiumBadge from "@/components/PremiumBadge";
-import { SubscriptionDetails } from "@/types";
 
 // Gumroad product links
 const MONTHLY_SUBSCRIPTION_URL = "https://oleksandr04.gumroad.com/l/wseban";
 const YEARLY_SUBSCRIPTION_URL = "https://oleksandr04.gumroad.com/l/ixoazp";
 
+// Testimonial data
+const TESTIMONIALS = [
+  {
+    name: "Michael Chen",
+    position: "Software Engineer",
+    content:
+      "The premium templates helped me stand out in a competitive field. I received 3 interview requests within a week!",
+    avatar: "👨‍💻",
+  },
+  {
+    name: "Sarah Johnson",
+    position: "Marketing Director",
+    content:
+      "Being able to download my resume as a professionally formatted PDF was a game-changer. Highly recommend upgrading!",
+    avatar: "👩‍💼",
+  },
+  {
+    name: "David Rodriguez",
+    position: "Data Analyst",
+    content:
+      "The advanced AI options tailored my resume perfectly for data science roles. Worth every penny!",
+    avatar: "👨‍🔬",
+  },
+];
+
 export default function SupportPage() {
   const { t } = useLanguage();
   const { user, isPremium, subscriptionDetails } = useAuth();
   const [donationAmount, setDonationAmount] = useState(10);
-  const [showThanks, setShowThanks] = useState(false);
-  const [testimonials, setTestimonials] = useState([
-    {
-      name: "Michael Chen",
-      position: "Software Engineer",
-      content:
-        "The premium templates helped me stand out in a competitive field. I received 3 interview requests within a week!",
-      avatar: "👨‍💻",
-    },
-    {
-      name: "Sarah Johnson",
-      position: "Marketing Director",
-      content:
-        "Being able to download my resume as a professionally formatted PDF was a game-changer. Highly recommend upgrading!",
-      avatar: "👩‍💼",
-    },
-    {
-      name: "David Rodriguez",
-      position: "Data Analyst",
-      content:
-        "The advanced AI options tailored my resume perfectly for data science roles. Worth every penny!",
-      avatar: "👨‍🔬",
-    },
-  ]);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
 
   useEffect(() => {
     // Rotate through testimonials
     const interval = setInterval(() => {
-      setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
+      setActiveTestimonial((prev) => (prev + 1) % TESTIMONIALS.length);
     }, 8000);
 
     return () => clearInterval(interval);
-  }, [testimonials.length]);
+  }, []);
 
   const handlePurchase = () => {
     // Redirect to the appropriate Gumroad product page
@@ -213,7 +213,7 @@ export default function SupportPage() {
               <div className="bg-gray-800 rounded-lg p-4 border border-gray-600 relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
                 <div className="pl-4">
-                  {testimonials.map((testimonial, index) => (
+                  {TESTIMONIALS.map((testimonial, index) => (
                     <div
                       key={index}
                       className={`transition-all duration-500 ${
@@ -238,12 +238,14 @@ export default function SupportPage() {
                           </div>
                         </div>
                       </div>
-                      <p className="text-gray-300">"{testimonial.content}"</p>
+                      <p className="text-gray-300">
+                        &quot;{testimonial.content}&quot;
+                      </p>
                     </div>
                   ))}
                 </div>
                 <div className="flex justify-center mt-4">
-                  {testimonials.map((_, index) => (
+                  {TESTIMONIALS.map((_, index) => (
                     <button
                       key={index}
                       className={`mx-1 w-2 h-2 rounded-full ${
@@ -260,7 +262,7 @@ export default function SupportPage() {
           </div>
 
           <div className="bg-gray-700 shadow-md rounded-lg p-8 border border-gray-600">
-            {showThanks ? (
+            {activeTestimonial === -1 ? (
               <div className="bg-blue-900/30 p-6 rounded-lg text-center mb-8 border border-blue-500 relative overflow-hidden">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-400 via-purple-500 to-blue-400"></div>
                 <div className="absolute inset-0 bg-blue-500/5 pointer-events-none">
@@ -379,7 +381,7 @@ export default function SupportPage() {
 
                 <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 mb-6">
                   <h3 className="font-semibold text-gray-300 mb-2">
-                    What's included:
+                    What&apos;s included:
                   </h3>
                   <ul className="space-y-2">
                     <li className="flex items-center text-gray-300">

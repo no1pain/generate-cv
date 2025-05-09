@@ -7,6 +7,13 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 
+// Define a proper error type
+interface AuthError {
+  message: string;
+  code?: string;
+  status?: number;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { t } = useLanguage();
@@ -44,9 +51,17 @@ export default function LoginPage() {
         await signIn(email, password);
         // Redirect will happen automatically in the useEffect
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Auth error:", error);
-      setError(error.message || "An error occurred during authentication");
+      // Type guard for error object
+      if (error && typeof error === "object" && "message" in error) {
+        setError(
+          (error as AuthError).message ||
+            "An error occurred during authentication"
+        );
+      } else {
+        setError("An unexpected error occurred");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -57,9 +72,17 @@ export default function LoginPage() {
       setError("");
       await signInWithGoogle();
       // Redirect will happen in the callback
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Google auth error:", error);
-      setError(error.message || "An error occurred with Google authentication");
+      // Type guard for error object
+      if (error && typeof error === "object" && "message" in error) {
+        setError(
+          (error as AuthError).message ||
+            "An error occurred with Google authentication"
+        );
+      } else {
+        setError("An unexpected error occurred with Google authentication");
+      }
     }
   };
 

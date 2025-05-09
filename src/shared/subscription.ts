@@ -52,7 +52,7 @@ export async function createSubscription(
     const currentDate = new Date();
     const currentPeriodStart = currentDate.toISOString();
 
-    let currentPeriodEnd = new Date(currentDate);
+    const currentPeriodEnd = new Date(currentDate);
     if (planPeriod === "monthly") {
       currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1);
     } else if (planPeriod === "yearly") {
