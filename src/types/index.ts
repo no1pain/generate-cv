@@ -1,40 +1,39 @@
-export type ResumeFormData = {
+export type TemplateType = "modern" | "classic" | "creative";
+
+export interface ResumeFormData {
   personalInfo: {
     fullName: string;
     email: string;
-    phone?: string;
-    location?: string;
-    linkedin?: string;
-    github?: string;
-    website?: string;
+    phone: string;
+    location: string;
+    linkedin: string;
+    github: string;
+    website: string;
   };
-  education: Array<{
+  education: {
     institution: string;
     degree: string;
     startDate: string;
     endDate: string;
-    description?: string;
-  }>;
-  experience: Array<{
+    description: string;
+  }[];
+  experience: {
     company: string;
     position: string;
     startDate: string;
     endDate: string;
     description: string;
-  }>;
+  }[];
   skills: string[];
-  languages?: Array<{
+  languages: {
     language: string;
-    proficiency: "Basic" | "Intermediate" | "Advanced" | "Fluent" | "Native";
-  }>;
+    proficiency: string;
+  }[];
   targetPosition: string;
-  additionalInfo?: string;
-};
+  additionalInfo: string;
+}
 
-export type TemplateType = "modern" | "classic" | "creative";
-
-export type GeneratedResume = {
+export interface GeneratedResume {
   text: string;
-  html?: string;
-  pdfUrl?: string;
-};
+  id?: string;
+}

@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 229, 231, 235;
+  --background-start-rgb: 31, 41, 55;
+  --background-end-rgb: 17, 24, 39;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background-color: #1f2937; /* dark grey */
+}
+
+@layer base {
+  input, select, textarea {
+    @apply border border-gray-600 rounded-md p-2 w-full bg-gray-800 text-gray-200;
+  }
+  
+  button {
+    @apply rounded-md transition-colors;
+  }
+  
+  button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+} 
