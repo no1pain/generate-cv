@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { User } from "@supabase/supabase-js";
 
 // This keeps track of received webhooks for debugging
 interface WebhookEntry {
@@ -34,16 +33,16 @@ export async function GET(request: Request) {
     gumroadAppId: process.env.GUMROAD_APP_ID ? "✅ Set" : "❌ Missing",
   };
 
-  // If test param is provided, perform a subscription check for debugging
-  if (test === "true" && email) {
+  // If test param is provided, check current user's subscription
+  if (test === "true") {
     try {
       const supabase = createClient();
 
-      // Try to get all users from auth table
-      const { data: listData, error: listError } =
-        await supabase.auth.admin.listUsers();
+      // Get current user
+      const { data: authData, error: authError } =
+        await supabase.auth.getUser();
 
-      if (listError) {
+      if (authError) {
         return NextResponse.json({
           message: "Webhook check endpoint",
           envVariables: envCheck,
@@ -51,26 +50,13 @@ export async function GET(request: Request) {
           currentTime: new Date().toISOString(),
           testResult: {
             success: false,
-            error: "Error fetching users: " + listError.message,
+            error: "Error checking user: " + authError.message,
+            note: "You need to be logged in to check subscription status",
           },
         });
       }
 
-      // Search for the user in the list (case insensitive)
-      const emailLowercase = email.toLowerCase().trim();
-      const foundUsers = listData?.users.filter(
-        (u: User) => u.email?.toLowerCase().trim() === emailLowercase
-      );
-
-      // Check for matching users with similar emails to help with troubleshooting
-      const similarUsers = listData?.users.filter((u: User) =>
-        u.email?.toLowerCase().includes(emailLowercase.split("@")[0])
-      );
-
-      // Determine if we found a user
-      const user = foundUsers && foundUsers.length > 0 ? foundUsers[0] : null;
-
-      if (!user) {
+      if (!authData.user) {
         return NextResponse.json({
           message: "Webhook check endpoint",
           envVariables: envCheck,
@@ -78,18 +64,35 @@ export async function GET(request: Request) {
           currentTime: new Date().toISOString(),
           testResult: {
             success: false,
-            message: "User not found with email: " + email,
-            listLookupError: listError,
-            totalUsersFound: listData?.users.length || 0,
-            similarEmailsFound: similarUsers?.map((u) => u.email) || [],
-            allUsers: listData?.users.map((u) => u.email) || [],
-            troubleshooting:
-              "Make sure the email matches exactly what's in your Supabase auth table",
+            message: "You are not logged in",
+            activationLink: `/api/activate-premium?email=${encodeURIComponent(
+              email || ""
+            )}&force=true`,
           },
         });
       }
 
-      // If we found a user, check for subscription
+      // If we got here, we found the user
+      const user = authData.user;
+
+      // If email was specified, check if it matches the logged in user
+      if (email && email.toLowerCase() !== user.email?.toLowerCase()) {
+        return NextResponse.json({
+          message: "Webhook check endpoint",
+          envVariables: envCheck,
+          webhookUrl: `${process.env.GUMROAD_WEBHOOK_URL || "Not set"}`,
+          currentTime: new Date().toISOString(),
+          testResult: {
+            success: false,
+            message: `Email mismatch: Requested ${email} but you are logged in as ${user.email}`,
+            activationLink: `/api/activate-premium?email=${encodeURIComponent(
+              email
+            )}&force=true`,
+          },
+        });
+      }
+
+      // Check if user has an active subscription
       const { data: subscription } = await supabase
         .from("subscriptions")
         .select("*")
@@ -109,6 +112,11 @@ export async function GET(request: Request) {
           userEmail: user.email,
           hasSubscription: !!subscription,
           subscriptionDetails: subscription || "No active subscription",
+          activationLink: !subscription
+            ? `/api/activate-premium?email=${encodeURIComponent(
+                user.email || ""
+              )}`
+            : null,
         },
       });
     } catch (error) {
@@ -137,7 +145,7 @@ export async function GET(request: Request) {
     currentTime: new Date().toISOString(),
     recentWebhooks: webhookLog,
     testing:
-      "To test a specific email, add ?test=true&email=user@example.com to this URL",
+      "To test your current user's subscription, add ?test=true to this URL",
   });
 }
 
