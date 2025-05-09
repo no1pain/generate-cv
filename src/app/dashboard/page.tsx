@@ -34,23 +34,26 @@ const mockResumes = [
 
 export default function DashboardPage() {
   const { t } = useLanguage();
-  const { user, signOut, isLoading: authLoading } = useAuth();
+  const {
+    user,
+    signOut,
+    isLoading: authLoading,
+    isPremium,
+    subscriptionDetails,
+  } = useAuth();
   const router = useRouter();
   const [resumes, setResumes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("resumes"); // "resumes" or "account"
-  const [isPremium, setIsPremium] = useState(false); // Mock premium status
   const [showPremiumBanner, setShowPremiumBanner] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
-    // If no user is logged in, redirect to login page
     if (!authLoading && !user) {
       router.push("/login");
       return;
     }
 
-    // If user is logged in, fetch their resumes
     if (user) {
       const fetchResumes = async () => {
         try {
@@ -89,6 +92,7 @@ export default function DashboardPage() {
   };
 
   const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       year: "numeric",
@@ -472,6 +476,36 @@ export default function DashboardPage() {
                     )}
                   </p>
                 </div>
+
+                {isPremium && subscriptionDetails && (
+                  <div className="pt-4 border-t border-gray-600 mt-6">
+                    <h3 className="font-semibold text-gray-200 mb-4">
+                      Subscription Details
+                    </h3>
+                    <div className="space-y-2 text-gray-300">
+                      <p>
+                        <span className="text-gray-400">Plan:</span> Premium (
+                        {subscriptionDetails.plan_period})
+                      </p>
+                      <p>
+                        <span className="text-gray-400">Status:</span>{" "}
+                        {subscriptionDetails.status}
+                      </p>
+                      {subscriptionDetails.current_period_end && (
+                        <p>
+                          <span className="text-gray-400">
+                            Next billing date:
+                          </span>{" "}
+                          {formatDate(subscriptionDetails.current_period_end)}
+                        </p>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-400 mt-4">
+                      To manage your subscription, please visit your Gumroad
+                      account dashboard.
+                    </p>
+                  </div>
+                )}
 
                 {!isPremium && (
                   <div className="pt-6 border-t border-gray-600 mt-6">

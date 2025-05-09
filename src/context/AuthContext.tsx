@@ -9,15 +9,22 @@ import {
 } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import {
+  checkUserSubscription,
+  getUserSubscription,
+} from "@/shared/subscription";
 
 type AuthContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  isPremium: boolean;
+  subscriptionDetails: any | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  refreshPremiumStatus: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,7 +33,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
+  const [subscriptionDetails, setSubscriptionDetails] = useState<any | null>(
+    null
+  );
   const supabase = createClient();
+
+  // Check premium status whenever user changes
+  useEffect(() => {
+    const checkPremiumStatus = async () => {
+      if (user) {
+        await refreshPremiumStatus();
+      } else {
+        setIsPremium(false);
+        setSubscriptionDetails(null);
+      }
+    };
+
+    checkPremiumStatus();
+  }, [user]);
+
+  const refreshPremiumStatus = async () => {
+    if (!user) return;
+
+    try {
+      // Check if user has an active subscription
+      const hasPremium = await checkUserSubscription(user.id);
+      setIsPremium(hasPremium);
+
+      // Get detailed subscription info
+      if (hasPremium) {
+        const subscriptionData = await getUserSubscription(user.id);
+        setSubscriptionDetails(subscriptionData);
+      } else {
+        setSubscriptionDetails(null);
+      }
+    } catch (error) {
+      console.error("Error checking premium status:", error);
+      setIsPremium(false);
+      setSubscriptionDetails(null);
+    }
+  };
 
   useEffect(() => {
     const setData = async () => {
@@ -124,10 +171,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     session,
     isLoading,
+    isPremium,
+    subscriptionDetails,
     signIn,
     signUp,
     signOut,
     signInWithGoogle,
+    refreshPremiumStatus,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

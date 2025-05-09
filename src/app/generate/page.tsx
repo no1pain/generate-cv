@@ -6,15 +6,16 @@ import ResumeForm from "@/components/ResumeForm";
 import ResumePreview from "@/components/ResumePreview";
 import { ResumeFormData, GeneratedResume } from "@/types";
 import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import PremiumBadge from "@/components/PremiumBadge";
 
 export default function GeneratePage() {
   const { t } = useLanguage();
+  const { isPremium } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [resume, setResume] = useState<GeneratedResume>({ text: "" });
   const [activeTab, setActiveTab] = useState("form"); // "form" or "preview"
-  const [isPremium, setIsPremium] = useState(false); // Mock premium status
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("basic");
   const [showPremiumModal, setShowPremiumModal] = useState(false);

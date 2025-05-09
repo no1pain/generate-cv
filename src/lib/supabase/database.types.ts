@@ -40,6 +40,55 @@ export interface Database {
           }
         ];
       };
+      subscriptions: {
+        Row: {
+          id: string;
+          created_at: string;
+          updated_at: string | null;
+          user_id: string;
+          status: string;
+          plan_type: string;
+          plan_period: string;
+          current_period_start: string | null;
+          current_period_end: string | null;
+          gumroad_subscription_id: string | null;
+          cancel_at_period_end: boolean;
+        };
+        Insert: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string | null;
+          user_id: string;
+          status: string;
+          plan_type: string;
+          plan_period: string;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          gumroad_subscription_id?: string | null;
+          cancel_at_period_end?: boolean;
+        };
+        Update: {
+          id?: string;
+          created_at?: string;
+          updated_at?: string | null;
+          user_id?: string;
+          status?: string;
+          plan_type?: string;
+          plan_period?: string;
+          current_period_start?: string | null;
+          current_period_end?: string | null;
+          gumroad_subscription_id?: string | null;
+          cancel_at_period_end?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey";
+            columns: ["user_id"];
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          }
+        ];
+      };
       resumes: {
         Row: {
           id: string;

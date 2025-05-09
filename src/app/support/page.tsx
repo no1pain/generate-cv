@@ -3,13 +3,19 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import PremiumShowcase from "@/components/PremiumShowcase";
 import PremiumBadge from "@/components/PremiumBadge";
 
+// Gumroad product links
+const MONTHLY_SUBSCRIPTION_URL = "https://oleksandr04.gumroad.com/l/wseban";
+const YEARLY_SUBSCRIPTION_URL = "https://oleksandr04.gumroad.com/l/ixoazp";
+
 export default function SupportPage() {
   const { t } = useLanguage();
-  const [donationAmount, setDonationAmount] = useState(5);
+  const { user, isPremium, subscriptionDetails } = useAuth();
+  const [donationAmount, setDonationAmount] = useState(10);
   const [showThanks, setShowThanks] = useState(false);
   const [testimonials, setTestimonials] = useState([
     {
@@ -45,11 +51,58 @@ export default function SupportPage() {
     return () => clearInterval(interval);
   }, [testimonials.length]);
 
-  const handleDonate = () => {
-    setShowThanks(true);
-    setTimeout(() => {
-      setShowThanks(false);
-    }, 5000);
+  const handlePurchase = () => {
+    // Redirect to the appropriate Gumroad product page
+    const gumroadUrl =
+      donationAmount === 10
+        ? MONTHLY_SUBSCRIPTION_URL
+        : YEARLY_SUBSCRIPTION_URL;
+
+    // You can add UTM parameters or custom fields if needed
+    const urlWithParams = new URL(gumroadUrl);
+
+    // Add the user's email as a pre-filled field if they're logged in
+    if (user?.email) {
+      urlWithParams.searchParams.append("email", user.email);
+    }
+
+    // Redirect to Gumroad
+    window.location.href = urlWithParams.toString();
+  };
+
+  // Check if user already has an active subscription
+  const renderSubscriptionStatus = () => {
+    if (!isPremium || !subscriptionDetails) return null;
+
+    const planPeriod = subscriptionDetails.plan_period || "monthly";
+    const nextBilling = subscriptionDetails.current_period_end
+      ? new Date(subscriptionDetails.current_period_end).toLocaleDateString()
+      : "Unknown";
+
+    return (
+      <div className="bg-blue-900/30 p-6 rounded-lg border border-blue-500 mb-6">
+        <h3 className="text-xl font-semibold text-gray-100 mb-4 flex items-center">
+          <span className="text-amber-400 mr-2">⭐</span> Premium Subscription
+          Active
+        </h3>
+        <div className="text-gray-300 space-y-2">
+          <p>
+            <span className="text-gray-400">Plan:</span> Premium ({planPeriod})
+          </p>
+          <p>
+            <span className="text-gray-400">Status:</span> Active
+          </p>
+          <p>
+            <span className="text-gray-400">Next billing date:</span>{" "}
+            {nextBilling}
+          </p>
+        </div>
+        <p className="text-sm text-gray-400 mt-4">
+          To manage your subscription, please visit your Gumroad account
+          dashboard.
+        </p>
+      </div>
+    );
   };
 
   return (
@@ -264,6 +317,8 @@ export default function SupportPage() {
                   </Link>
                 </div>
               </div>
+            ) : isPremium ? (
+              renderSubscriptionStatus()
             ) : (
               <>
                 <div className="flex justify-between items-center mb-6">
@@ -350,7 +405,7 @@ export default function SupportPage() {
                 </div>
 
                 <button
-                  onClick={handleDonate}
+                  onClick={handlePurchase}
                   className="w-full px-8 py-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors text-lg mb-6 relative overflow-hidden group"
                 >
                   <div className="absolute inset-0 w-full bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 opacity-0 group-hover:opacity-20 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-all duration-1000"></div>
@@ -361,7 +416,8 @@ export default function SupportPage() {
                   )}
                 </button>
                 <p className="text-sm text-gray-400 text-center">
-                  Secure payment processing. Your information is protected.
+                  Secure payment processing via Gumroad. Your information is
+                  protected.
                 </p>
               </>
             )}
