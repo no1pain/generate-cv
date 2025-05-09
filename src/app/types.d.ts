@@ -39,10 +39,12 @@ declare module "react-hook-form" {
     render: (props: { field: Record<string, unknown> }) => React.ReactElement;
   }
 
-  export function useForm(config?: Record<string, unknown>): {
+  export function useForm<TFormValues = Record<string, unknown>>(
+    config?: Record<string, unknown>
+  ): {
     register: RegisterFunction;
     handleSubmit: (
-      callback: (data: Record<string, unknown>) => void
+      callback: (data: TFormValues) => void
     ) => (e: React.FormEvent) => void;
     control: unknown;
     formState: FormState;
