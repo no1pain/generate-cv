@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
-import { ResumeFormData, TemplateType } from "@/types";
+import {
+  ResumeFormData,
+  TemplateType,
+  EducationItem,
+  ExperienceItem,
+  LanguageItem,
+} from "@/types";
 
 type ResumeFormProps = {
   onSubmit: (data: ResumeFormData) => void;
@@ -179,7 +185,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
           </button>
         </div>
 
-        {educationFields.map((field: any, index: number) => (
+        {educationFields.map((field, index: number) => (
           <div key={field.id} className="border rounded-md p-4 mb-4">
             <div className="flex justify-between items-center mb-2">
               <h3 className="font-medium">Education #{index + 1}</h3>
@@ -298,7 +304,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
           </button>
         </div>
 
-        {experienceFields.map((field: any, index: number) => (
+        {experienceFields.map((field, index: number) => (
           <div key={field.id} className="border rounded-md p-4 mb-4">
             <div className="flex justify-between items-center mb-2">
               <h3 className="font-medium">Experience #{index + 1}</h3>
@@ -447,7 +453,7 @@ export default function ResumeForm({ onSubmit, isLoading }: ResumeFormProps) {
           </button>
         </div>
 
-        {languageFields.map((field: any, index: number) => (
+        {languageFields.map((field, index: number) => (
           <div key={field.id} className="flex gap-4 items-center mb-2">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-300">

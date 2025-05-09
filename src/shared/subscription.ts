@@ -1,4 +1,10 @@
 import { createClient } from "@/lib/supabase/client";
+import {
+  SubscriptionDetails,
+  SubscriptionPlanPeriod,
+  SubscriptionPlanType,
+  SubscriptionStatus,
+} from "@/types";
 
 /**
  * Check if the user has an active premium subscription
@@ -33,8 +39,8 @@ export async function checkUserSubscription(userId: string): Promise<boolean> {
  */
 export async function createSubscription(
   userId: string,
-  planType: string,
-  planPeriod: string,
+  planType: SubscriptionPlanType,
+  planPeriod: SubscriptionPlanPeriod,
   gumroadSubscriptionId: string
 ): Promise<boolean> {
   if (!userId) return false;
@@ -55,7 +61,7 @@ export async function createSubscription(
 
     const { error } = await supabase.from("subscriptions").insert({
       user_id: userId,
-      status: "active",
+      status: "active" as SubscriptionStatus,
       plan_type: planType,
       plan_period: planPeriod,
       current_period_start: currentPeriodStart,
@@ -81,7 +87,7 @@ export async function createSubscription(
  */
 export async function updateSubscriptionStatus(
   gumroadSubscriptionId: string,
-  status: string,
+  status: SubscriptionStatus,
   cancelAtPeriodEnd: boolean = false
 ): Promise<boolean> {
   if (!gumroadSubscriptionId) return false;
@@ -113,7 +119,9 @@ export async function updateSubscriptionStatus(
 /**
  * Gets the user's subscription details
  */
-export async function getUserSubscription(userId: string) {
+export async function getUserSubscription(
+  userId: string
+): Promise<SubscriptionDetails | null> {
   if (!userId) return null;
 
   const supabase = createClient();
@@ -132,7 +140,7 @@ export async function getUserSubscription(userId: string) {
       return null;
     }
 
-    return data;
+    return data as SubscriptionDetails;
   } catch (error) {
     console.error("Error getting subscription:", error);
     return null;

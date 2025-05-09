@@ -13,13 +13,14 @@ import {
   checkUserSubscription,
   getUserSubscription,
 } from "@/shared/subscription";
+import { SubscriptionDetails } from "@/types";
 
 type AuthContextType = {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
   isPremium: boolean;
-  subscriptionDetails: any | null;
+  subscriptionDetails: SubscriptionDetails | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -34,9 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
-  const [subscriptionDetails, setSubscriptionDetails] = useState<any | null>(
-    null
-  );
+  const [subscriptionDetails, setSubscriptionDetails] =
+    useState<SubscriptionDetails | null>(null);
   const supabase = createClient();
 
   // Check premium status whenever user changes

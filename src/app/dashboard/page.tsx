@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import Navbar from "@/components/Navbar";
 import PremiumFeatureButton from "@/components/PremiumFeatureButton";
 import PremiumBadge from "@/components/PremiumBadge";
+import { SubscriptionDetails } from "@/types";
 
 // Mock resume history data
 const mockResumes = [

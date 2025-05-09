@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import PremiumShowcase from "@/components/PremiumShowcase";
 import PremiumBadge from "@/components/PremiumBadge";
+import { SubscriptionDetails } from "@/types";
 
 // Gumroad product links
 const MONTHLY_SUBSCRIPTION_URL = "https://oleksandr04.gumroad.com/l/wseban";
@@ -74,7 +75,7 @@ export default function SupportPage() {
   const renderSubscriptionStatus = () => {
     if (!isPremium || !subscriptionDetails) return null;
 
-    const planPeriod = subscriptionDetails.plan_period || "monthly";
+    const planPeriod = subscriptionDetails.plan_period;
     const nextBilling = subscriptionDetails.current_period_end
       ? new Date(subscriptionDetails.current_period_end).toLocaleDateString()
       : "Unknown";

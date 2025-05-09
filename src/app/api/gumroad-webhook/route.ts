@@ -4,6 +4,11 @@ import {
   createSubscription,
   updateSubscriptionStatus,
 } from "@/shared/subscription";
+import {
+  SubscriptionPlanPeriod,
+  SubscriptionPlanType,
+  SubscriptionStatus,
+} from "@/types";
 
 // Webhook secret for verification
 const WEBHOOK_SECRET = process.env.GUMROAD_WEBHOOK_SECRET || "";
@@ -62,8 +67,8 @@ export async function POST(request: Request) {
     // New subscription
     if (resource === "subscription" && action === "created") {
       // Determine the plan type based on the product permalink
-      let planType = "premium";
-      let planPeriod = "monthly";
+      let planType: SubscriptionPlanType = "premium";
+      let planPeriod: SubscriptionPlanPeriod = "monthly";
 
       if (productPermalink?.includes("ixoazp")) {
         planPeriod = "yearly"; // Yearly plan
@@ -95,7 +100,7 @@ export async function POST(request: Request) {
       resource === "subscription" &&
       (action === "cancelled" || action === "ended" || action === "failed")
     ) {
-      const status =
+      const status: SubscriptionStatus =
         action === "cancelled"
           ? "canceled"
           : action === "ended"
