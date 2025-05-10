@@ -7,10 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import Navbar from "@/components/Navbar";
 import PremiumShowcase from "@/components/PremiumShowcase";
 import PremiumBadge from "@/components/PremiumBadge";
-
-// Gumroad product links
-const MONTHLY_SUBSCRIPTION_URL = "https://oleksandr04.gumroad.com/l/wseban";
-const YEARLY_SUBSCRIPTION_URL = "https://oleksandr04.gumroad.com/l/ixoazp";
+import { PremiumSubscribeButton } from "@/components/PremiumSubscribeButton";
 
 // Testimonial data
 const TESTIMONIALS = [
@@ -52,25 +49,6 @@ export default function SupportPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handlePurchase = () => {
-    // Redirect to the appropriate Gumroad product page
-    const gumroadUrl =
-      donationAmount === 10
-        ? MONTHLY_SUBSCRIPTION_URL
-        : YEARLY_SUBSCRIPTION_URL;
-
-    // You can add UTM parameters or custom fields if needed
-    const urlWithParams = new URL(gumroadUrl);
-
-    // Add the user's email as a pre-filled field if they're logged in
-    if (user?.email) {
-      urlWithParams.searchParams.append("email", user.email);
-    }
-
-    // Redirect to Gumroad
-    window.location.href = urlWithParams.toString();
-  };
-
   // Check if user already has an active subscription
   const renderSubscriptionStatus = () => {
     if (!isPremium || !subscriptionDetails) return null;
@@ -99,8 +77,7 @@ export default function SupportPage() {
           </p>
         </div>
         <p className="text-sm text-gray-400 mt-4">
-          To manage your subscription, please visit your Gumroad account
-          dashboard.
+          To manage your subscription, please visit your account dashboard.
         </p>
       </div>
     );
@@ -248,12 +225,13 @@ export default function SupportPage() {
                   {TESTIMONIALS.map((_, index) => (
                     <button
                       key={index}
-                      className={`mx-1 w-2 h-2 rounded-full ${
+                      onClick={() => setActiveTestimonial(index)}
+                      className={`w-2 h-2 rounded-full mx-1 ${
                         index === activeTestimonial
-                          ? "bg-blue-400"
+                          ? "bg-blue-500"
                           : "bg-gray-600"
                       }`}
-                      onClick={() => setActiveTestimonial(index)}
+                      aria-label={`View testimonial ${index + 1}`}
                     />
                   ))}
                 </div>
@@ -407,19 +385,12 @@ export default function SupportPage() {
                   </ul>
                 </div>
 
-                <button
-                  onClick={handlePurchase}
-                  className="w-full px-8 py-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 transition-colors text-lg mb-6 relative overflow-hidden group"
-                >
-                  <div className="absolute inset-0 w-full bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 opacity-0 group-hover:opacity-20 transform translate-x-[-100%] group-hover:translate-x-[100%] transition-all duration-1000"></div>
-                  {donationAmount === 10 ? (
-                    <>Upgrade for $10/month</>
-                  ) : (
-                    <>Upgrade for $25/year</>
-                  )}
-                </button>
-                <p className="text-sm text-gray-400 text-center">
-                  Secure payment processing via Gumroad. Your information is
+                <PremiumSubscribeButton
+                  planType={donationAmount === 25 ? "yearly" : "monthly"}
+                />
+
+                <p className="text-sm text-gray-400 text-center mt-6">
+                  Secure payment processing via Stripe. Your information is
                   protected.
                 </p>
               </>
